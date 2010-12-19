@@ -1,0 +1,73 @@
+Trac Wiki to git-based Github Wiki
+==================================
+
+A very simple script to convert [Trac][] tickets to a git repository suitable
+for use as a Github wiki.
+
+
+Warning: Don't blame me
+-----------------------
+
+This is intended as a starting point for a migration from Trac. You may use it
+as base for your own implementation, play with it, fork it and if you extend
+it I'll be very pleased to receive pull requests.
+
+But I'm not reponsible if you use it and anything happens that you don't like,
+expected or not.
+
+
+Features
+--------
+
+* imports all Trac wiki pages including directories and subpages
+* keeps history of pages
+* keeps author, date and change comments
+* converts most of trac formatting to Github extended markdown:
+    * inline code
+    * code paragraphs with optional language identifier
+    * header 1-4
+    * most  urls (CamelCase and
+      !CamelCase should be translated correctly)
+    * text markup: strong, italic
+    * ordered and unordered lists
+* easily customizable by editing the source code
+
+
+Bugs / Enhancements / Comments
+------------------------------
+
+Please feel free to provide feedback, bug reports and enhancement requests via
+the [Github issue tracker][ghi]
+
+
+Known Bugs / Limitations
+------------------------
+
+* it's quite slow (> 12 regexps and at least two external processes per
+  revision)
+* not all wiki format translations are supported (no macros, images, links to tickets, ...)
+* trac time is interpreted as UTC
+* won't work with directory (a.k.a. subpage) names containing unicode chars.
+  There's a crude workaround for when the file system changes unicode encoding
+  of files (Mac OS X), so file names containing unicode should work.
+
+Installation
+------------
+
+Requirements: Python (tested with 2.7)
+
+You may want to modify the source code, especially these:
+
+* `GIT`: Path to `git` binary.
+* `format_user()`: Formats user id for git log messages. Includes the IP if
+  the address does not contain a "@".
+
+
+Usage
+-----
+    git init MyProject.wiki
+    ./trac2pivotal.py trac.db MyProject.wiki
+
+
+[Trac]: http://trac.edgewall.org
+[ghi]: https://github.com/hinnerk/Trac2GithubWiki/issues
