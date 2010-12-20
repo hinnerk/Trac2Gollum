@@ -1,7 +1,7 @@
 Trac Wiki to git-based Gollum Wiki
 ==================================
 
-A very simple script to convert [Trac][] tickets to a git repository suitable
+A very simple script to convert [Trac][] wiki pages to a git repository suitable
 for use as a [Gollum][] wiki (as used by [Github][]).
 
 
@@ -19,18 +19,23 @@ expected or not.
 Features
 --------
 
-* imports all Trac wiki pages including directories and subpages
-* keeps history of pages
+* imports most Trac wiki pages including directories and subpages
+  (i.e. any but pages edited by "trac", no trac documentation
+  litters the new wiki)
+* keeps original history of pages
 * keeps author, date and change comments
+* sets committer to "Trac2Gollum"
+* converts only the most recent revision, so conversion shouldn't
+  be able to irrevocably destroy data.
 * converts most of trac formatting to Github extended markdown:
     * inline code
     * code paragraphs with optional language identifier
     * header 1-4
-    * most  urls (CamelCase and
-      !CamelCase should be translated correctly)
+    * most  urls (CamelCase and !CamelCase should work)
     * text markup: strong, italic
     * ordered and unordered lists
-* easily customizable by editing the source code
+    * macros won't work but are marked and thus easy to find
+* easily customizable by editing the source code ;-)
 
 
 Bugs / Enhancements / Comments
@@ -61,6 +66,7 @@ You may want to modify the source code, especially these:
 * `GIT`: Path to `git` binary.
 * `format_user()`: Formats user id for git log messages. Includes the IP if
   the address does not contain a "@".
+* `format_comment()`: Formats the comment.
 
 
 Usage
