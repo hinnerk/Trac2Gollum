@@ -5,6 +5,7 @@ import sqlite3
 from datetime import datetime
 import subprocess
 import re
+import time
 
 GIT = "/opt/local/bin/git"
 
@@ -19,13 +20,14 @@ def format_user(entry):
     u'user <user@home.local>'
     """
     user = entry[3]
-    if u"<" in user and "@" in user:
-        return user
+    if u"<" in user and u"@" in user:
+        user, mail = user.split(u"<")
+        return (user, mail.strip(u">"))
     if u"@" in user:
         u, d = user.split(u"@")
-        return u"%s <%s>" % (u, user)
+        return (u, user)
     ip = entry[4]
-    return u"%s <%s>" % (user, ip)
+    return (user, ip)
 
 
 def format_comment(entry, final):
@@ -66,9 +68,9 @@ def format_time(timestamp):
     """ return a git compatible timestamp
 
     >>> format_time(1229442008.852975)
-    u'1229442008 0000'
+    u'1229442008 +0200'
     """
-    return str(int(timestamp)) + " 0200".decode("UTF-8")
+    return str(int(timestamp)) + " +0200".decode("UTF-8")
 
 
 def convert_code(text):
@@ -148,7 +150,7 @@ def format_text(text):
     >>> format_text(u"\\n 1. first\\n 2. second\\n")
     u'\\n1. first\\n2. second\\n'
     >>> format_text(u"There is a [[macro]] here.")
-    u'There is a (XXX macro: "macro") here.\n'
+    u'There is a (XXX macro: "macro") here.\\n'
     """
     # TODO: ticket: and source: links are not yet handled
     text = convert_code(text)
@@ -187,11 +189,13 @@ def read_database(db):
     pages = [x[0] for x in db.execute('select name from wiki where ipnr != "127.0.0.1" group by name', []).fetchall()]
     for page in pages:
         for revision in db.execute('select * from wiki where name is ? order by version', [page]).fetchall():
+            user, email = format_user(revision)
             yield {
                 "page": format_page(revision[0]),
                 "version": revision[1],
                 "time": format_time(revision[2]),
-                "user": format_user(revision),
+                "username": user,
+                "useremail": email,
                 "ip": revision[4],
                 "text": revision[5],
                 "comment": format_comment(revision, final=False),
@@ -201,8 +205,9 @@ def read_database(db):
         yield {
             "page": format_page(latest[0]),
             "version": latest[1],
-            "time": format_time(latest[2]),
-            "user": format_user(latest),
+            "time": format_time(time.time()),
+            "username": "Trac2Gollum",
+            "useremail": "github.com/hinnerk/Trac2Gollum.git",
             "ip": latest[4],
             "text": format_text(latest[5]),
             "comment": format_comment(latest, final=True),
@@ -221,13 +226,23 @@ def main():
             open(os.path.join(target, page), "wb").write(entry["text"].encode("utf-8"))
             subprocess.check_call([GIT, "add", page], cwd=target)
             try:
-                subprocess.check_call([GIT, "commit", "--author", entry["user"],
-                                       "--date", entry["time"], "-m", entry["comment"]], cwd=target)
+                subprocess.check_call([GIT, "commit", "-m", entry["comment"]], cwd=target,
+                                      env={"GIT_COMMITTER_DATE": entry["time"],
+                                           "GIT_AUTHOR_DATE": entry["time"],
+                                           "GIT_AUTHOR_NAME": entry["username"],
+                                           "GIT_AUTHOR_EMAIL": entry["useremail"],
+                                           "GIT_COMMITTER_NAME": "Trac2Gollum",
+                                           "GIT_COMMITTER_EMAIL": "http://github.com/hinnerk/Trac2Gollum.git"})
             # trying to circumvent strange unicode-encoded file name problems:
             except subprocess.CalledProcessError:
                 [subprocess.check_call([GIT, "add", x], cwd=target) for x in os.listdir(target)]
-                subprocess.check_call([GIT, "commit", "--author", entry["user"],
-                                       "--date", entry["time"], "-m", entry["comment"]], cwd=target)
+                subprocess.check_call([GIT, "commit", "-m", entry["comment"]], cwd=target,
+                                      env={"GIT_COMMITTER_DATE": entry["time"],
+                                           "GIT_AUTHOR_DATE": entry["time"],
+                                           "GIT_AUTHOR_NAME": entry["username"],
+                                           "GIT_AUTHOR_EMAIL": entry["useremail"],
+                                           "GIT_COMMITTER_NAME": "Trac2Gollum",
+                                           "GIT_COMMITTER_EMAIL": "http://github.com/hinnerk/Trac2Gollum.git"})
 
         except Exception, e:
             print "\n\n\nXXX Problem: ", e
