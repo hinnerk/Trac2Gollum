@@ -88,7 +88,7 @@ re_ol = re.compile(r'^\s(\d+\.)', re.MULTILINE)
 
 
 def format_text(text):
-    """ converts trac wiki to github markdown syntax
+    """ converts trac wiki to gollum markdown syntax
 
     >>> format_text(u"= One =\\n== Two ==\\n=== Three ===\\n==== Four ====")
     u'# One\\n## Two\\n### Three\\n#### Four'
