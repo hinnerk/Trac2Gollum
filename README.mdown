@@ -72,10 +72,10 @@ You may want to modify the source code, especially these:
 Usage
 -----
     git init MyProject.wiki
-    ./trac2pivotal.py trac.db MyProject.wiki
+    ./trac2gollum.py trac.db MyProject.wiki
 
 
 [Trac]: http://trac.edgewall.org
-[ghi]: https://github.com/hinnerk/Trac2GithubWiki/issues
+[ghi]: https://github.com/hinnerk/Trac2Gollum/issues
 [Github]: https://github.com/
 [Gollum]: https://github.com/github/gollum
