@@ -1,8 +1,8 @@
-Trac Wiki to git-based Github Wiki
+Trac Wiki to git-based Gollum Wiki
 ==================================
 
 A very simple script to convert [Trac][] tickets to a git repository suitable
-for use as a Github wiki.
+for use as a [Gollum][] wiki (as used by [Github][]).
 
 
 Warning: Don't blame me
@@ -71,3 +71,5 @@ Usage
 
 [Trac]: http://trac.edgewall.org
 [ghi]: https://github.com/hinnerk/Trac2GithubWiki/issues
+[Github]: https://github.com/
+[Gollum]: https://github.com/github/gollum
