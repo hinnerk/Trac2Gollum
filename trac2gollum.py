@@ -28,10 +28,13 @@ def format_user(entry):
     return u"%s <%s>" % (user, ip)
 
 
-def format_comment(entry):
-    comment = entry[6]
-    if not comment:
-        return u'Page "%s" updated.' % (entry[0])
+def format_comment(entry, final):
+    """ creates / formats commit comment.
+        "final" is true when content is converted from Trac markup to Markdown.
+    """
+    comment = entry[6] or (u'Page "%s" updated.' % (entry[0]))
+    if final:
+        return u'%s (automatically converted to Markdown)' % comment
     return comment
 
 
@@ -74,7 +77,7 @@ def convert_code(text):
     >>> convert_code(u"\\nTest\\n\\n{{{\\n#!sh\\nCode paragraph\\n}}}\\n\\nTest\\n")
     u'\\nTest\\n\\n```sh\\nCode paragraph\\n```\\n\\nTest\\n'
     >>> convert_code(u"\\nTest\\n\\n{{{\\nCode paragraph\\n}}}\\n\\nTest\\n")
-    u'\\nTest\\n\\n```\\nCode paragraph\\n```\\n\\nTest\\n'
+    u'\\nTest\\n\\n\\n    Code paragraph\\n\\n\\nTest\\n'
 
     """
     result = u""
@@ -180,15 +183,28 @@ def read_database(db):
     pages = [x[0] for x in db.execute('select name from wiki where ipnr != "127.0.0.1" group by name', []).fetchall()]
     for page in pages:
         for revision in db.execute('select * from wiki where name is ? order by version', [page]).fetchall():
-            result = {}
-            result["page"] = format_page(revision[0])
-            result["version"] = revision[1]
-            result["time"]  = format_time(revision[2])
-            result["user"] = format_user(revision)
-            result["ip"] = revision[4]
-            result["text"] = format_text(revision[5])
-            result["comment"] = format_comment(revision)
-            yield result
+            yield {
+                "page": format_page(revision[0]),
+                "version": revision[1],
+                "time": format_time(revision[2]),
+                "user": format_user(revision),
+                "ip": revision[4],
+                "text": revision[5],
+                "comment": format_comment(revision, final=False),
+            }
+        latest = db.execute('select name, max(version), time, author, ipnr, text, comment from wiki where name is ?',
+                            [page]).fetchall()[0]
+        yield {
+            "page": format_page(latest[0]),
+            "version": latest[1],
+            "time": format_time(latest[2]),
+            "user": format_user(latest),
+            "ip": latest[4],
+            "text": format_text(latest[5]),
+            "comment": format_comment(latest, final=True),
+        }
+
+
 
 
 
