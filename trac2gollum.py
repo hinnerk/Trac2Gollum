@@ -78,7 +78,7 @@ re_h4 = re.compile(r'====\s(.+?)\s====')
 re_h3 = re.compile(r'===\s(.+?)\s===')
 re_h2 = re.compile(r'==\s(.+?)\s==')
 re_h1 = re.compile(r'=\s(.+?)\s=')
-re_uri = re.compile(r'\[([^\s]+)\s(.+)\]')
+re_uri = re.compile(r'\[(?:wiki:)?([^\s]+)\s(.+)\]')
 re_CamelCaseUri = re.compile(r'([^"\/\!])(([A-Z][a-z0-9]+){2,})')
 re_NoUri = re.compile(r'\!(([A-Z][a-z0-9]+){2,})')
 re_strong = re.compile(r"'''(.+)'''")
@@ -95,7 +95,7 @@ def format_text(text):
     >>> format_text(u"Paragraph with ''italic'' and '''bold'''.")
     u'Paragraph with *italic* and **bold**.'
     >>> format_text(u"Example with [wiki:a/b one link].")
-    u'Example with [[one link|wiki:a/b]].'
+    u'Example with [[one link|a/b]].'
     >>> format_text(u"Beispiel mit [http://blog.fefe.de Fefes Blog] Link.")
     u'Beispiel mit [[Fefes Blog|http://blog.fefe.de]] Link.'
     >>> format_text(u"Beispiel mit CamelCase Link.")
@@ -113,7 +113,7 @@ def format_text(text):
     >>> format_text(u"\\n 1. first\\n 2. second\\n")
     u'\\n1. first\\n2. second\\n'
     """
-    # TODO: wiki: and ticket: and source: links missing
+    # TODO: ticket: and source: links are not yet handled
     text = re_inlinecode.sub(r'`\1`', text)
     text = re_code_with.sub(r'```\1\n\2```', text)
     text = re_code_without.sub(r'```\n\1```', text)
