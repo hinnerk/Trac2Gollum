@@ -68,7 +68,7 @@ def format_time(timestamp):
     >>> format_time(1229442008.852975)
     u'1229442008 0000'
     """
-    return str(int(timestamp)) + " 0000".decode("UTF-8")
+    return str(int(timestamp)) + " 0200".decode("UTF-8")
 
 
 def convert_code(text):
@@ -111,6 +111,7 @@ def convert_code(text):
     return result
 
 
+re_macro = re.compile(r'\[{2}(\w+)\]{2}')
 re_inlinecode = re.compile(r'\{\{\{([^\n]+?)\}\}\}')
 re_h4 = re.compile(r'====\s(.+?)\s====')
 re_h3 = re.compile(r'===\s(.+?)\s===')
@@ -146,9 +147,12 @@ def format_text(text):
     u'\\n* one\\n* two\\n'
     >>> format_text(u"\\n 1. first\\n 2. second\\n")
     u'\\n1. first\\n2. second\\n'
+    >>> format_text(u"There is a [[macro]] here.")
+    u'There is a (XXX macro: "macro") here.\n'
     """
     # TODO: ticket: and source: links are not yet handled
     text = convert_code(text)
+    text = re_macro.sub(r'(XXX macro: "\1")', text)
     text = re_inlinecode.sub(r'`\1`', text)
     text = re_h4.sub(r'#### \1', text)
     text = re_h3.sub(r'### \1', text)
@@ -203,9 +207,6 @@ def read_database(db):
             "text": format_text(latest[5]),
             "comment": format_comment(latest, final=True),
         }
-
-
-
 
 
 def main():
