@@ -67,13 +67,48 @@ def format_time(timestamp):
     """
     return str(int(timestamp)) + " 0000".decode("UTF-8")
 
+
+def convert_code(text):
+    """ replace code blocks (very primitive)
+
+    >>> convert_code(u"\\nTest\\n\\n{{{\\n#!sh\\nCode paragraph\\n}}}\\n\\nTest\\n")
+    u'\\nTest\\n\\n```sh\\nCode paragraph\\n```\\n\\nTest\\n'
+    >>> convert_code(u"\\nTest\\n\\n{{{\\nCode paragraph\\n}}}\\n\\nTest\\n")
+    u'\\nTest\\n\\n```\\nCode paragraph\\n```\\n\\nTest\\n'
+
+    """
+    result = u""
+    start = False
+    running = False
+    original = text
+    indent = u""
+    for line in text.splitlines():
+        if line.strip() == u"{{{":
+            start = True
+            running = True
+        elif start:
+            start = False
+            if line.startswith("#!"):
+                result += u"```" + line.replace("#!", "") + os.linesep
+            else:
+                indent = u"    "
+                result += os.linesep + indent + line + os.linesep
+        elif line.strip() == u"}}}" and running:
+            running = False
+            if indent:
+                indent = u""
+                result += os.linesep
+            else:
+                result += u"```" + os.linesep
+        else:
+            result += indent + line + os.linesep
+    if running:
+        # something went wrong; don't touch the text.
+        return original
+    return result
+
+
 re_inlinecode = re.compile(r'\{\{\{([^\n]+?)\}\}\}')
-# ^\{{3}(?:\n|\r\n?)        # three opening curly braces and newline
-# (?:#\!(.+)(?:\n|\r\n?))   # sharp bang + language identifier
-# ((?:.+(?:\n|\r\n?)+))     # the code itself
-# \}{3}(?:\n|\r\n?)         # three closing curly braces and newline
-re_code_with = re.compile(r"^\{{3}(?:\n|\r\n?)(?:#\!(.+)(?:\n|\r\n?))((?:.+(?:\n|\r\n?)+))\}{3}(?:\n|\r\n?)", re.MULTILINE)
-re_code_without = re.compile(r"^\{{3}(?:\n|\r\n?)((?:.+(?:\n|\r\n?)+))\}{3}(?:\n|\r\n?)", re.MULTILINE)
 re_h4 = re.compile(r'====\s(.+?)\s====')
 re_h3 = re.compile(r'===\s(.+?)\s===')
 re_h2 = re.compile(r'==\s(.+?)\s==')
@@ -91,32 +126,27 @@ def format_text(text):
     """ converts trac wiki to gollum markdown syntax
 
     >>> format_text(u"= One =\\n== Two ==\\n=== Three ===\\n==== Four ====")
-    u'# One\\n## Two\\n### Three\\n#### Four'
+    u'# One\\n## Two\\n### Three\\n#### Four\\n'
     >>> format_text(u"Paragraph with ''italic'' and '''bold'''.")
-    u'Paragraph with *italic* and **bold**.'
+    u'Paragraph with *italic* and **bold**.\\n'
     >>> format_text(u"Example with [wiki:a/b one link].")
-    u'Example with [[one link|a/b]].'
+    u'Example with [[one link|a/b]].\\n'
     >>> format_text(u"Beispiel mit [http://blog.fefe.de Fefes Blog] Link.")
-    u'Beispiel mit [[Fefes Blog|http://blog.fefe.de]] Link.'
+    u'Beispiel mit [[Fefes Blog|http://blog.fefe.de]] Link.\\n'
     >>> format_text(u"Beispiel mit CamelCase Link.")
-    u'Beispiel mit [[CamelCase]] Link.'
+    u'Beispiel mit [[CamelCase]] Link.\\n'
     >>> format_text(u"Beispiel ohne !CamelCase Link.")
-    u'Beispiel ohne CamelCase Link.'
-    >>> format_text(u"{{{\\n#!sh\\nCode paragraph\\n}}}\\n")
-    u'```sh\\nCode paragraph\\n```'
-    >>> format_text(u"{{{\\nCode paragraph\\n}}}\\n")
-    u'```\\nCode paragraph\\n```'
-    >>> format_text(u"{{{inline code}}}\\n\\nand more {{{inline code}}}.")
-    u'`inline code`\\n\\nand more `inline code`.'
+    u'Beispiel ohne CamelCase Link.\\n'
+    >>> format_text(u"Test {{{inline code}}}\\n\\nand more {{{inline code}}}.")
+    u'Test `inline code`\\n\\nand more `inline code`.\\n'
     >>> format_text(u"\\n * one\\n * two\\n")
     u'\\n* one\\n* two\\n'
     >>> format_text(u"\\n 1. first\\n 2. second\\n")
     u'\\n1. first\\n2. second\\n'
     """
     # TODO: ticket: and source: links are not yet handled
+    text = convert_code(text)
     text = re_inlinecode.sub(r'`\1`', text)
-    text = re_code_with.sub(r'```\1\n\2```', text)
-    text = re_code_without.sub(r'```\n\1```', text)
     text = re_h4.sub(r'#### \1', text)
     text = re_h3.sub(r'### \1', text)
     text = re_h2.sub(r'## \1', text)
