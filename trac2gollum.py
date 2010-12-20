@@ -141,7 +141,8 @@ def format_page(page):
     """
     if page == u"WikiStart":
         return u"Home"
-    return page
+    # Gollum wiki replaces slash and space with dash:
+    return page.replace(u"/", u"-").replace(u" ", u"-")
 
 
 def read_database(db):
@@ -166,14 +167,10 @@ def main():
     source = read_database(db)
     for entry in source:
         # make paths conform to local filesystem
-        page = os.path.join(*entry["page"].split(u"/"))  + u".md"
-        directory = os.path.join(target, *entry["page"].split(u"/")[:-1])
+        page = os.path.normpath(entry["page"] + u".md")
         if not os.path.supports_unicode_filenames:
             page = page.encode("utf-8")
-            directory = directory.encode("utf-8")
         try:
-            if not os.path.isdir(directory):
-                os.makedirs(directory, mode=0755)
             open(os.path.join(target, page), "wb").write(entry["text"].encode("utf-8"))
             subprocess.check_call([GIT, "add", page], cwd=target)
             try:
@@ -181,14 +178,15 @@ def main():
                                        "--date", entry["time"], "-m", entry["comment"]], cwd=target)
             # trying to circumvent strange unicode-encoded file name problems:
             except subprocess.CalledProcessError:
-                dir_wo_target = os.path.join("", *directory.split(os.sep)[1:])
-                [subprocess.check_call([GIT, "add", os.path.join(dir_wo_target, x)], cwd=target) for x in os.listdir(directory)]
+                [subprocess.check_call([GIT, "add", x], cwd=target) for x in os.listdir(target)]
                 subprocess.check_call([GIT, "commit", "--author", entry["user"],
                                        "--date", entry["time"], "-m", entry["comment"]], cwd=target)
-                
+
         except Exception, e:
             print "\n\n\nXXX Problem: ", e
             sys.exit(23)
+    # finally garbage collect git repository
+    subprocess.check_call([GIT, "gc"], cwd=target)
 
 
 if __name__ == "__main__":
