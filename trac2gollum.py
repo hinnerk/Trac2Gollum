@@ -120,6 +120,7 @@ re_h3 = re.compile(r'===\s(.+?)\s===')
 re_h2 = re.compile(r'==\s(.+?)\s==')
 re_h1 = re.compile(r'=\s(.+?)\s=')
 re_uri = re.compile(r'\[(?:wiki:)?([^\s]+)\s(.+)\]')
+re_wiki_uri = re.compile(r'(\s)wiki:([A-Za-z0-9]+)(\s)')
 re_CamelCaseUri = re.compile(r'([^"\/\!\[\]\|])(([A-Z][a-z0-9]+){2,})')
 re_NoUri = re.compile(r'\!(([A-Z][a-z0-9]+){2,})')
 re_strong = re.compile(r"'''(.+)'''")
@@ -145,6 +146,8 @@ def format_text(text):
     u'Fieser [[Argumente fuer dieses Angebot|WarumBackup]] Link\\n'
     >>> format_text(u"Beispiel ohne !CamelCase Link.")
     u'Beispiel ohne CamelCase Link.\\n'
+    >>> format_text(u"Beispiel mit wiki:wikilink")
+    u'Beispiel mit [[wikilink]]\\n'
     >>> format_text(u"Test {{{inline code}}}\\n\\nand more {{{inline code}}}.")
     u'Test `inline code`\\n\\nand more `inline code`.\\n'
     >>> format_text(u"\\n * one\\n * two\\n")
@@ -164,6 +167,7 @@ def format_text(text):
     text = re_h1.sub(r'# \1', text)
     text = re_uri.sub(r'[[\2|' + r'\1]]', text)
     text = re_CamelCaseUri.sub(r'\1[[\2]]', text)
+    text = re_wiki_uri.sub(r'\1[[\2]]\3', text)
     text = re_NoUri.sub(r'\1', text)
     text = re_strong.sub(r'**\1**', text)
     text = re_italic.sub(r'*\1*', text)
