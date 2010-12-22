@@ -13,11 +13,11 @@ def format_user(entry):
     """ git requires users to conform to "A B <ab@c.de>"
 
     >>> format_user(['', '', '', u'user', u'127.0.0.1'])
-    u'user <127.0.0.1>'
+    (u'user', u'127.0.0.1')
     >>> format_user(['', '', '', u'user@home.local', u'127.0.0.1'])
-    u'user <user@home.local>'
+    (u'user', u'user@home.local')
     >>> format_user(['', '', '', u'user <user@home.local>', u'127.0.0.1'])
-    u'user <user@home.local>'
+    (u'user ', u'user@home.local')
     """
     user = entry[3]
     if u"<" in user and u"@" in user:
@@ -120,7 +120,7 @@ re_h3 = re.compile(r'===\s(.+?)\s===')
 re_h2 = re.compile(r'==\s(.+?)\s==')
 re_h1 = re.compile(r'=\s(.+?)\s=')
 re_uri = re.compile(r'\[(?:wiki:)?([^\s]+)\s(.+)\]')
-re_CamelCaseUri = re.compile(r'([^"\/\!])(([A-Z][a-z0-9]+){2,})')
+re_CamelCaseUri = re.compile(r'([^"\/\!\[\]\|])(([A-Z][a-z0-9]+){2,})')
 re_NoUri = re.compile(r'\!(([A-Z][a-z0-9]+){2,})')
 re_strong = re.compile(r"'''(.+)'''")
 re_italic = re.compile(r"''(.+)''")
@@ -141,6 +141,8 @@ def format_text(text):
     u'Beispiel mit [[Fefes Blog|http://blog.fefe.de]] Link.\\n'
     >>> format_text(u"Beispiel mit CamelCase Link.")
     u'Beispiel mit [[CamelCase]] Link.\\n'
+    >>> format_text(u"Fieser [WarumBackup Argumente fuer dieses Angebot] Link")
+    u'Fieser [[Argumente fuer dieses Angebot|WarumBackup]] Link\\n'
     >>> format_text(u"Beispiel ohne !CamelCase Link.")
     u'Beispiel ohne CamelCase Link.\\n'
     >>> format_text(u"Test {{{inline code}}}\\n\\nand more {{{inline code}}}.")
